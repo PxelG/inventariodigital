@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+        body {
+            background-color: #f4b084;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+            background-color: #ffffff;
+        }
+        th {
+            background-color: #f4b084;
+        }
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin: 2px;
+        }
+        .file-input-container input[type="file"] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+        }
+        .file-input-container label {
+            background-color: #f4b084;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .image-preview-container {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
+        }
+        .image-preview {
+            display: inline-block;
+            position: relative;
+            cursor: zoom-in;
+            margin: 2px;
+            width: 100px;
+            height: 100px;
+            overflow: hidden;
+        }
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            transition: transform 0.2s;
+        }
+        .image-preview:hover img {
+            transform: scale(1.1);
+        }
+        .zoomed-image {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            border: 5px solid #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .button-group {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            display: flex;
+            flex-direction: column;
+        }
+        .button-group button {
+            background-color: #f4b084;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 2px 0;
+            padding: 2px 5px;
+        }
+        #accountMenu {
+            display: none;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 10px;
+            background-color: #f4b084;
+        }
+        #accountMenu img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        #accountMenu button {
+            background-color: #f4b084;
+            border: none;
+            cursor: pointer;
+        }
+        #accountMenu .dropdown {
+            position: relative;
+        }
+        #accountMenu .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #f4b084;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        #accountMenu .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        #accountMenu .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+        #accountMenu .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        #login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #loginForm {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #loginForm label {
+            font-size: 14px;
+        }
+        #loginForm input {
+            font-size: 14px;
+            padding: 5px;
+            margin: 5px 0;
+            width: 200px;
+        }
+        #loginForm button {
+            margin-top: 10px;
+            background-color: #f4b084;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #loginForm button:hover {
+            background-color: #e69500;
+        }
+        #login-title {
+            font-size: 36px;
+            color: #87ceeb;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .dashboard-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+        }
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            width: 100%;
+        }
+        .dashboard-section {
+            flex: 1;
+            min-width: 250px;
+            margin: 10px;
+            padding: 20px;
+            background-color: #f4b084;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .dashboard-section h3 {
+            margin-bottom: 10px;
+        }
+        .dashboard-section ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .dashboard-section li {
+            margin: 5px 0;
+        }
+        #dashboardButton {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #87ceeb;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #dashboardButton:hover {
+            background-color: #66b2cc;
+        }
+        #dashboardDropdown {
+            position: relative;
+            display: inline-block;
+        }
+        #dashboardDropdownContent {
+            display: none;
+            position: absolute;
+            background-color: #f4b084;
+            min-width: 160px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+        #dashboardDropdownContent a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        #dashboardDropdownContent a:hover {
+            background-color: #ddd;
+        }
+        #dashboardDropdown:hover #dashboardDropdownContent {
+            display: block;
+        }
+        .close-dashboard {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f44336;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        .close-dashboard:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+    <title>Inventario de Equipos</title>
+</head>
+<body>
+    <div id="accountMenu">
+        <div class="dropdown">
+            <img src="https://www.gravatar.com/avatar/?d=mp&s=40" alt="Foto de perfil">
+            <span>pixel</span>
+            <div class="dropdown-content">
+                <a href="#" onclick="openAccountSettings()">Configuración de la cuenta</a>
+                <a href="#" onclick="logout()">Salir</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="login-container">
+        <form id="loginForm">
+            <div id="login-title">INVENTARIO DIGITAL PIXEL G</div>
+            <label for="username">Usuario:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Contraseña:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Iniciar Sesión</button>
+        </form>
+    </div>
+
+    <div id="inventory" style="display:none;">
+        <div id="dashboardDropdown">
+            <button id="dashboardButton">Dashboard</button>
+            <div id="dashboardDropdownContent">
+                <a href="#" onclick="showDashboard()">Ver Dashboard</a>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Equipos</th>
+                    <th>Referencia Equipo</th>
+                    <th>Modelo</th>
+                    <th>Serial</th>
+                    <th>Sistema Operativo</th>
+                    <th>Capacidad de Disco Duro</th>
+                    <th>Procesador</th>
+                    <th>Memoria</th>
+                    <th>Observaciones</th>
+                    <th>Adjuntar Fotografías del Equipo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="equipmentTableBody">
+                <!-- Aquí se generarán dinámicamente las filas -->
+            </tbody>
+        </table>
+        <button id="addRowButton">Agregar Equipo</button>
+    </div>
+
+    <div id="dashboardContainer" class="dashboard-container">
+        <button class="close-dashboard" onclick="closeDashboard()">Cerrar</button>
+        <div class="dashboard">
+            <div class="dashboard-section" id="dashboardTotalEquipos">
+                <h3>Total de Equipos</h3>
+                <ul id="equiposList"></ul>
+                <div>Total: <span id="totalEquipos">0</span></div>
+            </div>
+            <div class="dashboard-section" id="dashboardSistemasOperativos">
+                <h3>Sistemas Operativos</h3>
+                <ul id="sistemasOperativosList"></ul>
+            </div>
+            <div class="dashboard-section" id="dashboardDiscosDuros">
+                <h3>Discos Duros</h3>
+                <ul id="discosDurosList"></ul>
+            </div>
+            <div class="dashboard-section" id="dashboardMemorias">
+                <h3>Memorias</h3>
+                <ul id="memoriasList"></ul>
+            </div>
+            <div class="dashboard-section" id="dashboardProcesadores">
+                <h3>Procesadores</h3>
+                <ul id="procesadoresList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para la configuración de la cuenta -->
+    <dialog id="accountSettingsModal">
+        <article>
+            <hgroup>
+                <h2>Configuración de la cuenta</h2>
+            </hgroup>
+            <form>
+                <label for="profilePicture">Foto de perfil:</label>
+                <input type="file" id="profilePicture" name="profilePicture" accept="image/*">
+                <img id="profilePicturePreview" src="https://www.gravatar.com/avatar/?d=mp&s=40" alt="Vista previa de la foto de perfil">
+                
+                <label for="companyName">Nombre de la empresa:</label>
+                <input type="text" id="companyName" name="companyName" placeholder="Nombre de la empresa">
+
+                <footer>
+                    <button type="button" onclick="closeAccountSettings()">Cerrar</button>
+                    <button type="button" onclick="saveAccountSettings()">Guardar</button>
+                </footer>
+            </form>
+        </article>
+    </dialog>
+
+    <div class="overlay" id="overlay" style="display:none;" onclick="closeZoom()"></div>
+    <img class="zoomed-image" id="zoomedImage" style="display:none;">
+
+    <script>
+        let equipmentCounter = 0;
+        let equipmentData = JSON.parse(localStorage.getItem('equipmentData')) || [];
+
+        function saveData() {
+            localStorage.setItem('equipmentData', JSON.stringify(equipmentData));
+        }
+
+        function loadData() {
+            equipmentData.forEach(equipment => {
+                addRow(equipment);
+            });
+        }
+
+        function addRow(equipment = {}) {
+            const tableBody = document.getElementById('equipmentTableBody');
+            const newRow = document.createElement('tr');
+            newRow.id = `equipmentRow${equipmentCounter}`;
+
+            const equipmentFields = {
+                equipo: equipment.equipo || '',
+                referencia: equipment.referencia || '',
+                modelo: equipment.modelo || '',
+                serial: equipment.serial || '',
+                sistema: equipment.sistema || '',
+                capacidad: equipment.capacidad || '',
+                procesador: equipment.procesador || '',
+                memoria: equipment.memoria || '',
+                observaciones: equipment.observaciones || '',
+                fotos: equipment.fotos || []
+            };
+
+            newRow.innerHTML = `
+                <td><input type="text" placeholder="Equipo" value="${equipmentFields.equipo}"></td>
+                <td><input type="text" placeholder="Referencia" value="${equipmentFields.referencia}"></td>
+                <td><input type="text" placeholder="Modelo" value="${equipmentFields.modelo}"></td>
+                <td><input type="text" placeholder="Serial" value="${equipmentFields.serial}"></td>
+                <td><input type="text" placeholder="Sistema Operativo" value="${equipmentFields.sistema}"></td>
+                <td><input type="text" placeholder="Capacidad Disco Duro" value="${equipmentFields.capacidad}"></td>
+                <td><input type="text" placeholder="Procesador" value="${equipmentFields.procesador}"></td>
+                <td><input type="text" placeholder="Memoria" value="${equipmentFields.memoria}"></td>
+                <td><input type="text" placeholder="Observaciones" value="${equipmentFields.observaciones}"></td>
+                <td>
+                    <div class="image-preview-container" id="image-preview-container-${equipmentCounter}">
+                        ${equipmentFields.fotos.map((foto, index) => `
+                            <div class="image-preview" id="image-preview-${equipmentCounter}-${index}" onclick="superZoom('${foto}')">
+                                <img src="${foto}" alt="Foto">
+                                <div class="button-group">
+                                    <button onclick="deletePhoto(${equipmentCounter}, ${index})">Eliminar</button>
+                                    <button onclick="downloadPhoto('${foto}')">Descargar</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                        <div class="file-input-container">
+                            <label for="file-input-${equipmentCounter}">Seleccionar archivo</label>
+                            <input type="file" id="file-input-${equipmentCounter}" name="file-input-${equipmentCounter}" accept="image/*" onchange="previewImage(event, ${equipmentCounter})">
+                        </div>
+                    </div>
+                </td>
+                <td><button onclick="deleteRow(${equipmentCounter})">Eliminar</button></td>
+            `;
+
+            tableBody.appendChild(newRow);
+            equipmentCounter++;
+            updateDashboard();
+            saveData();
+        }
+
+        function previewImage(event, counter) {
+            const input = event.target;
+            const previewContainer = document.getElementById(`image-preview-container-${counter}`);
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgIndex = previewContainer.querySelectorAll('.image-preview').length;
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'image-preview';
+                    imgContainer.id = `image-preview-${counter}-${imgIndex}`;
+                    imgContainer.innerHTML = `
+                        <img src="${e.target.result}" alt="Foto" onclick="superZoom('${e.target.result}')">
+                        <div class="button-group">
+                            <button onclick="deletePhoto(${counter}, ${imgIndex})">Eliminar</button>
+                            <button onclick="downloadPhoto('${e.target.result}')">Descargar</button>
+                        </div>
+                    `;
+                    previewContainer.appendChild(imgContainer);
+
+                    if (!equipmentData[counter]) {
+                        equipmentData[counter] = { fotos: [] };
+                    }
+                    equipmentData[counter].fotos.push(e.target.result);
+                    saveData();
+                    updateDashboard();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function deleteRow(counter) {
+            const row = document.getElementById(`equipmentRow${counter}`);
+            row.parentNode.removeChild(row);
+            equipmentData.splice(counter, 1);
+            saveData();
+            updateDashboard();
+        }
+
+        function deletePhoto(counter, index) {
+            const imgContainer = document.getElementById(`image-preview-${counter}-${index}`);
+            imgContainer.parentNode.removeChild(imgContainer);
+            equipmentData[counter].fotos.splice(index, 1);
+            saveData();
+            updateDashboard();
+        }
+
+        function downloadPhoto(url) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'photo.jpg';
+            a.click();
+        }
+
+        function superZoom(url) {
+            const overlay = document.getElementById('overlay');
+            const zoomedImage = document.getElementById('zoomedImage');
+            zoomedImage.src = url;
+            overlay.style.display = 'block';
+            zoomedImage.style.display = 'block';
+        }
+
+        function closeZoom() {
+            const overlay = document.getElementById('overlay');
+            const zoomedImage = document.getElementById('zoomedImage');
+            overlay.style.display = 'none';
+            zoomedImage.style.display = 'none';
+        }
+
+        // Gestión del inicio de sesión
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Verificar credenciales
+            if (username === 'pixel' && password === 'Digital2025') {
+                // Mostrar inventario y menú de cuenta, ocultar inicio de sesión
+                document.getElementById('inventory').style.display = 'block';
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('accountMenu').style.display = 'flex';
+                document.body.style.backgroundColor = '#f4b084';
+                loadData();
+                updateDashboard();
+            } else {
+                alert('Credenciales incorrectas. Inténtalo de nuevo.');
+            }
+        });
+
+        function showDashboard() {
+            document.getElementById('dashboardContainer').style.display = 'flex';
+            updateDashboard();
+        }
+
+        function closeDashboard() {
+            document.getElementById('dashboardContainer').style.display = 'none';
+        }
+
+        function updateDashboard() {
+            const totalEquipos = equipmentData.length;
+            document.getElementById('totalEquipos').innerText = totalEquipos;
+
+            const sistemasOperativos = {};
+            const discosDuros = {};
+            const memorias = {};
+            const procesadores = {};
+
+            equipmentData.forEach(equipo => {
+                if (equipo.sistema) {
+                    sistemasOperativos[equipo.sistema] = (sistemasOperativos[equipo.sistema] || 0) + 1;
+                }
+                if (equipo.capacidad) {
+                    discosDuros[equipo.capacidad] = (discosDuros[equipo.capacidad] || 0) + 1;
+                }
+                if (equipo.memoria) {
+                    memorias[equipo.memoria] = (memorias[equipo.memoria] || 0) + 1;
+                }
+                if (equipo.procesador) {
+                    procesadores[equipo.procesador] = (procesadores[equipo.procesador] || 0) + 1;
+                }
+            });
+
+            updateDashboardSection('sistemasOperativosList', sistemasOperativos);
+            updateDashboardSection('discosDurosList', discosDuros);
+            updateDashboardSection('memoriasList', memorias);
+            updateDashboardSection('procesadoresList', procesadores);
+        }
+
+        function updateDashboardSection(elementId, data) {
+            const listElement = document.getElementById(elementId);
+            listElement.innerHTML = '';
+            for (const key in data) {
+                const listItem = document.createElement('li');
+                listItem.innerText = `${key}: ${data[key]}`;
+                listElement.appendChild(listItem);
+            }
+        }
+
+        // Configuración de la cuenta
+        const accountSettingsModal = document.getElementById('accountSettingsModal');
+
+        function openAccountSettings() {
+            accountSettingsModal.showModal();
+        }
+
+        function closeAccountSettings() {
+            accountSettingsModal.close();
+        }
+
+        function saveAccountSettings() {
+            const profilePictureInput = document.getElementById('profilePicture');
+            if (profilePictureInput.files && profilePictureInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.querySelector('#accountMenu img');
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(profilePictureInput.files[0]);
+            }
+            closeAccountSettings();
+        }
+
+        function logout() {
+            // Cerrar sesión
+            document.getElementById('inventory').style.display = 'none';
+            document.getElementById('dashboardContainer').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
+            document.getElementById('accountMenu').style.display = 'none';
+            document.body.style.backgroundColor = '#f4b084';
+        }
+
+        document.getElementById('addRowButton').addEventListener('click', addRow);
+    </script>
+</body>
+</html>
